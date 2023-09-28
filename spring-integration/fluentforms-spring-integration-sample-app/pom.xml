@@ -19,11 +19,15 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter</artifactId>
+		</dependency>
+<!--		<dependency>
 			<groupId>com._4point.aem.fluentforms</groupId>
 			<artifactId>fluentforms-spring-integration-spring-boot-starter</artifactId>
 			<version>0.0.3-SNAPSHOT</version>
 		</dependency>
-
+-->
 		<!-- Testing Dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
