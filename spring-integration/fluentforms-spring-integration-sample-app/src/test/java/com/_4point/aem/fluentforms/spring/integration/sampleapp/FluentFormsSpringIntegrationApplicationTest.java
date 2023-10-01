@@ -19,6 +19,12 @@ class FluentFormsSpringIntegrationApplicationTest {
 	@LocalServerPort
 	int port;
 	
+	private static final String TEST_XML = 
+			"""
+			<root>
+				<payload>Mixed Case String</payload>
+			</root>
+			""";
 	
 	@Test
     public void whenSpringContextIsBootstrapped_thenNoExceptions() {
@@ -28,11 +34,11 @@ class FluentFormsSpringIntegrationApplicationTest {
 	public void whenHttpRequestArrives_getResponse() {
 		given()
 			.baseUri("http://localhost:" + port)
-			.body("Some Body Text")
+			.body(TEST_XML)
 		.when()
 			.post("/service/test")
 		.then()
 			.statusCode(200)
-			.body(containsString("Response"));	
+			.body(allOf(containsString("Response"), containsString("Some replaced text")));	
 	}
 }
