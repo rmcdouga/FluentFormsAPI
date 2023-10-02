@@ -2,6 +2,8 @@ package com._4point.aem.fluentforms.spring.integration.sampleapp;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.Templates;
@@ -19,10 +21,13 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpMethod;
 import org.springframework.integration.core.GenericHandler;
 import org.springframework.integration.core.MessageSource;
+import org.springframework.integration.dsl.HeaderEnricherSpec;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.http.dsl.Http;
 import org.springframework.integration.http.dsl.HttpRequestHandlerEndpointSpec;
+import org.springframework.integration.xml.transformer.XPathHeaderEnricher;
 import org.springframework.integration.xml.transformer.XsltPayloadTransformer;
+import org.springframework.integration.xml.transformer.support.XPathExpressionEvaluatingHeaderValueMessageProcessor;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.MessageBuilder;
 
@@ -40,6 +45,9 @@ public class FluentFormsSpringIntegrationApplication {
 			<xsl:mode on-no-match="shallow-copy"/>
 			<xsl:template match="/root/payload">
 				<payload>Some replaced text.</payload>
+				<headerData>
+					<value1>headerValue</value1>
+				</headerData>
 			</xsl:template>
 			
 			</xsl:stylesheet>
@@ -59,6 +67,8 @@ public class FluentFormsSpringIntegrationApplication {
 	IntegrationFlow flow() {
 		return IntegrationFlow.from(httpMessageSource())
 				.transform(createXsltTransformer(XSLT_RESOURCE))
+				.enrichHeaders(FluentFormsSpringIntegrationApplication::extractHeaderInfo)
+				.transform(new XPathHeaderEnricher(of(Map.of(DeliveryGateway.Parmeters.param1Key(), IncomingData.value1Xpath()))))
 				.handle(handler())
 				.get();
 	}
@@ -93,4 +103,18 @@ public class FluentFormsSpringIntegrationApplication {
 		return (MessageSource<String>) () -> MessageBuilder.withPayload("testString").build();
 	}
 
+	private static void extractHeaderInfo(HeaderEnricherSpec h) {
+		h.header("enrichedHeader", "enrichedValue");
+	}
+	
+	private static class IncomingData {
+		private static final String VALUE1_XPATH = "//headerData/value1";
+		
+		public static String value1Xpath() { return VALUE1_XPATH; }
+	}
+	
+	private static Map<String,XPathExpressionEvaluatingHeaderValueMessageProcessor> of(Map<String,String> in) {
+		return in.entrySet().stream()
+							.collect(Collectors.toMap(e->e.getKey(), e->new XPathExpressionEvaluatingHeaderValueMessageProcessor(e.getValue())));
+	}
 }
