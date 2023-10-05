@@ -10,6 +10,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
+import io.restassured.http.ContentType;
+
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, 
 				classes = FluentFormsSpringIntegrationApplication.class, 
 				properties = {"fluentforms.aem.servername=localhost", "fluentforms.aem.port=4502",
@@ -35,6 +37,7 @@ class FluentFormsSpringIntegrationApplicationTest {
 		given()
 			.baseUri("http://localhost:" + port)
 			.body(TEST_XML)
+			.contentType(ContentType.XML)
 		.when()
 			.post("/service/test")
 		.then()

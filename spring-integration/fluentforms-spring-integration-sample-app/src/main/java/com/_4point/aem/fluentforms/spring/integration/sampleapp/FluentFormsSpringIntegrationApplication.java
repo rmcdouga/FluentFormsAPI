@@ -55,6 +55,8 @@ public class FluentFormsSpringIntegrationApplication {
 
 	private static final Resource XSLT_RESOURCE = new ByteArrayResource(XSLT.getBytes(StandardCharsets.UTF_8)); 
 
+	private final DeliveryService deliveryService = new DeliveryService();
+	
 	public FluentFormsSpringIntegrationApplication(GitConfig gitConfig) {
 		gitConfig.logGitInformation();
 	}
@@ -66,10 +68,13 @@ public class FluentFormsSpringIntegrationApplication {
 	@Bean
 	IntegrationFlow flow() {
 		return IntegrationFlow.from(httpMessageSource())
+				.transform(b->new String((byte[])b, StandardCharsets.UTF_8)) // Transform byte[] to String because DomSourceFactory does not take byte[]
+				.log()
 				.transform(createXsltTransformer(XSLT_RESOURCE))
-				.enrichHeaders(FluentFormsSpringIntegrationApplication::extractHeaderInfo)
-				.transform(new XPathHeaderEnricher(of(Map.of(DeliveryGateway.Parmeters.param1Key(), IncomingData.value1Xpath()))))
-				.handle(handler())
+				.enrichHeaders(FluentFormsSpringIntegrationApplication::addHeaderForLaterRetrieval)
+				.transform(new XPathHeaderEnricher(of(Map.of(DeliveryService.Parameters.param1Key(), IncomingData.value1Xpath()))))
+				.transform(deliveryService)
+				.handle(writeOutPayload())
 				.get();
 	}
 
@@ -86,7 +91,7 @@ public class FluentFormsSpringIntegrationApplication {
 		}
 	}
 
-	private GenericHandler<String> handler() {
+	private GenericHandler<String> writeOutPayload() {
 		return (GenericHandler<String>) (payload, headers) -> {
 			FluentFormsSpringIntegrationApplication.log.atInfo().addArgument(payload).log("Found String '{}'.");
 			return "Response '" + payload + "'.";
@@ -95,7 +100,9 @@ public class FluentFormsSpringIntegrationApplication {
 
 	private HttpRequestHandlerEndpointSpec httpMessageSource() {
 		return Http.inboundGateway("/service/test")
-				   .requestMapping(r->r.methods(HttpMethod.POST))
+				   .requestMapping(r->r.methods(HttpMethod.POST)
+						   			   .consumes("application/xml")
+						   )
 				   ;
 	}
 
@@ -103,7 +110,7 @@ public class FluentFormsSpringIntegrationApplication {
 		return (MessageSource<String>) () -> MessageBuilder.withPayload("testString").build();
 	}
 
-	private static void extractHeaderInfo(HeaderEnricherSpec h) {
+	private static void addHeaderForLaterRetrieval(HeaderEnricherSpec h) {
 		h.header("enrichedHeader", "enrichedValue");
 	}
 	
