@@ -30,11 +30,14 @@ import org.springframework.integration.xml.transformer.XsltPayloadTransformer;
 import org.springframework.integration.xml.transformer.support.XPathExpressionEvaluatingHeaderValueMessageProcessor;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.MultiValueMap;
 
 import net.sf.saxon.TransformerFactoryImpl;
 
 @SpringBootApplication
 public class FluentFormsSpringIntegrationApplication {
+	private static final String FORM_PARAM_NAME = "form";
+
 	private final static Logger log = LoggerFactory.getLogger(FluentFormsSpringIntegrationApplication.class);
 
 	private static final String XSLT = 
@@ -66,8 +69,8 @@ public class FluentFormsSpringIntegrationApplication {
 	}
 
 	@Bean
-	IntegrationFlow flow() {
-		return IntegrationFlow.from(httpMessageSource())
+	IntegrationFlow postflow() {
+		return IntegrationFlow.from(httpPostMessageSource())
 				.transform(b->new String((byte[])b, StandardCharsets.UTF_8)) // Transform byte[] to String because DomSourceFactory does not take byte[]
 				.log()
 				.transform(createXsltTransformer(XSLT_RESOURCE))
@@ -75,6 +78,15 @@ public class FluentFormsSpringIntegrationApplication {
 				.transform(new XPathHeaderEnricher(of(Map.of(DeliveryService.Parameters.param1Key(), IncomingData.value1Xpath()))))
 				.transform(deliveryService)
 				.handle(writeOutPayload())
+				.get();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Bean
+	IntegrationFlow getflow() {
+		return IntegrationFlow.from(httpGetMessageSource())
+				.log()
+				.transform(mvm->"<html>" + ((MultiValueMap<String,String>)mvm).getFirst(FORM_PARAM_NAME) + "</html>")
 				.get();
 	}
 
@@ -98,10 +110,19 @@ public class FluentFormsSpringIntegrationApplication {
 		};
 	}
 
-	private HttpRequestHandlerEndpointSpec httpMessageSource() {
-		return Http.inboundGateway("/service/test")
+	private HttpRequestHandlerEndpointSpec httpPostMessageSource() {
+		return Http.inboundGateway("/service/posttest")
 				   .requestMapping(r->r.methods(HttpMethod.POST)
 						   			   .consumes("application/xml")
+						   )
+				   ;
+	}
+
+	private HttpRequestHandlerEndpointSpec httpGetMessageSource() {
+		return Http.inboundGateway("/service/gettest")
+				   .requestMapping(r->r.methods(HttpMethod.GET)
+						   			   .params(FORM_PARAM_NAME)
+						   			   .produces("text/html")
 						   )
 				   ;
 	}

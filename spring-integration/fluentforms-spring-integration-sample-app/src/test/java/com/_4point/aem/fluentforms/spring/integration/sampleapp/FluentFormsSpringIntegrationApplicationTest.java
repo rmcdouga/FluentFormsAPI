@@ -18,6 +18,8 @@ import io.restassured.http.ContentType;
 							  "fluentforms.aem.user=user", "fluentforms.aem.password=password"})
 class FluentFormsSpringIntegrationApplicationTest {
 
+	private static final String EXPECTED_FORM_NAME = "foo";
+
 	@LocalServerPort
 	int port;
 	
@@ -33,15 +35,28 @@ class FluentFormsSpringIntegrationApplicationTest {
     }
 
 	@Test
-	public void whenHttpRequestArrives_getResponse() {
+	public void whenHttpPostRequestArrives_getResponse() {
 		given()
 			.baseUri("http://localhost:" + port)
 			.body(TEST_XML)
 			.contentType(ContentType.XML)
 		.when()
-			.post("/service/test")
+			.post("/service/posttest")
 		.then()
 			.statusCode(200)
 			.body(allOf(containsString("Response"), containsString("Some replaced text")));	
 	}
+
+	@Test
+	public void whenHttpGetRequestArrives_getResponse() {
+		given()
+			.baseUri("http://localhost:" + port)
+		.when()
+			.param("form", EXPECTED_FORM_NAME)
+			.get("/service/gettest")
+		.then()
+			.statusCode(200)
+			.body(allOf(containsString("<html>"),containsString("</html>"),containsString(EXPECTED_FORM_NAME)));	
+	}
+
 }
