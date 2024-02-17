@@ -13,6 +13,7 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -28,9 +29,12 @@ import org.springframework.integration.http.dsl.HttpRequestHandlerEndpointSpec;
 import org.springframework.integration.xml.transformer.XPathHeaderEnricher;
 import org.springframework.integration.xml.transformer.XsltPayloadTransformer;
 import org.springframework.integration.xml.transformer.support.XPathExpressionEvaluatingHeaderValueMessageProcessor;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MultiValueMap;
+
+import com._4point.aem.fluentforms.spring.integration.AdaptiveFormsService;
 
 import net.sf.saxon.TransformerFactoryImpl;
 
@@ -68,6 +72,9 @@ public class FluentFormsSpringIntegrationApplication {
 		SpringApplication.run(FluentFormsSpringIntegrationApplication.class, args);
 	}
 
+	@Autowired
+	AdaptiveFormsService myafService;
+	
 	@Bean
 	IntegrationFlow postflow() {
 		return IntegrationFlow.from(httpPostMessageSource())
@@ -86,7 +93,10 @@ public class FluentFormsSpringIntegrationApplication {
 	IntegrationFlow getflow() {
 		return IntegrationFlow.from(httpGetMessageSource())
 				.log()
-				.transform(mvm->"<html>" + ((MultiValueMap<String,String>)mvm).getFirst(FORM_PARAM_NAME) + "</html>")
+//				.transform(mvm->"<html>" + ((MultiValueMap<String,String>)mvm).getFirst(FORM_PARAM_NAME) + "</html>")
+				.transform(mvm->((MultiValueMap<String,String>)mvm).getFirst(FORM_PARAM_NAME))
+				.log()
+				.transform(Message.class, AdaptiveFormsService::renderBlankAdaptiveFormFromString)
 				.get();
 	}
 
@@ -143,6 +153,8 @@ public class FluentFormsSpringIntegrationApplication {
 	
 	private static Map<String,XPathExpressionEvaluatingHeaderValueMessageProcessor> of(Map<String,String> in) {
 		return in.entrySet().stream()
-							.collect(Collectors.toMap(e->e.getKey(), e->new XPathExpressionEvaluatingHeaderValueMessageProcessor(e.getValue())));
+							.collect(
+									Collectors.toMap(e->e.getKey(), e->new XPathExpressionEvaluatingHeaderValueMessageProcessor(e.getValue()))
+									);
 	}
 }

@@ -9,8 +9,6 @@ import java.util.Objects;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.integration.transformer.AbstractTransformer;
-import org.springframework.integration.transformer.Transformer;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -116,6 +114,6 @@ public final class AdaptiveFormsService implements ApplicationContextAware {
 
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.applicationContext = applicationContext;
+		AdaptiveFormsService.applicationContext = applicationContext;
 	}
 }

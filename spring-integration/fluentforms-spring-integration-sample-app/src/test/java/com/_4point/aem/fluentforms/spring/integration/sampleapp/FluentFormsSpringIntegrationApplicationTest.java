@@ -10,8 +10,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+
 import io.restassured.http.ContentType;
 
+@WireMockTest
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, 
 				classes = FluentFormsSpringIntegrationApplication.class, 
 				properties = {"fluentforms.aem.servername=localhost", "fluentforms.aem.port=4502",
@@ -48,7 +53,11 @@ class FluentFormsSpringIntegrationApplicationTest {
 	}
 
 	@Test
-	public void whenHttpGetRequestArrives_getResponse() {
+	public void whenHttpGetRequestArrives_getResponse(WireMockRuntimeInfo wmRuntimeInfo) {
+		WireMock.stubFor(WireMock.get("/content/forms/af/" + EXPECTED_FORM_NAME + ".html?wcmmode=disabled")
+								 .willReturn(WireMock.ok("<html>" + EXPECTED_FORM_NAME + "</html>")));
+				
+		
 		given()
 			.baseUri("http://localhost:" + port)
 		.when()
