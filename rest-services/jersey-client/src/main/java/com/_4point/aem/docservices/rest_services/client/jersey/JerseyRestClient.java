@@ -22,7 +22,6 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.Response.Status.Family;
@@ -122,7 +121,7 @@ public class JerseyRestClient implements RestClient {
 					throw new RestClientException("Call to server succeeded but server failed to return content.  This should never happen.");
 				}
 
-				String responseContentType = response.getHeaderString(HttpHeaders.CONTENT_TYPE);
+				String responseContentType = response.getHeaderString(jakarta.ws.rs.core.HttpHeaders.CONTENT_TYPE);
 				if ( responseContentType == null || !expectedMediaType.isCompatible(MediaType.valueOf(responseContentType))) {
 					String msg = "Response from AEM server was not of expected type (" + expectedMediaType.toString() + ").  " + (responseContentType != null ? "content-type='" + responseContentType + "'" : "content-type was null") + ".";
 					InputStream entityStream = (InputStream) response.getEntity();

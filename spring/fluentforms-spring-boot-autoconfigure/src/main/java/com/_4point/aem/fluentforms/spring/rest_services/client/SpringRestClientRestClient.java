@@ -13,7 +13,6 @@ import java.util.function.Supplier;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -87,7 +86,7 @@ public class SpringRestClientRestClient implements RestClient {
 
 	private abstract class SpringClientRequestBuilder {
 		protected Function<UriBuilder, UriBuilder> uriBuilder = Function.identity();
-		protected Consumer<HttpHeaders> headerBuilder = correlationIdFn != null ? h->h.put(RestClient.CORRELATION_ID_HTTP_HDR, List.of(correlationIdFn.get())) 
+		protected Consumer<org.springframework.http.HttpHeaders> headerBuilder = correlationIdFn != null ? h->h.put(RestClient.CORRELATION_ID_HTTP_HDR, List.of(correlationIdFn.get())) 
         																	    : __->{};	// if correlationIdFn is available, use it as the base headerBuilder function.
 
         public void addQueryParam(String name, String value) {
@@ -101,9 +100,9 @@ public class SpringRestClientRestClient implements RestClient {
 
 	private abstract static class SpringClientRequest {
 	    private final Function<UriBuilder, UriBuilder> uriBuilder;
-	    private final Consumer<HttpHeaders> headerBuilder;
+	    private final Consumer<org.springframework.http.HttpHeaders> headerBuilder;
 
-        protected SpringClientRequest(Function<UriBuilder, UriBuilder> uriBuilder, Consumer<HttpHeaders> headerBuilder) {
+        protected SpringClientRequest(Function<UriBuilder, UriBuilder> uriBuilder, Consumer<org.springframework.http.HttpHeaders> headerBuilder) {
 			this.uriBuilder = uriBuilder;
 			this.headerBuilder = headerBuilder;
 		}
@@ -137,13 +136,13 @@ public class SpringRestClientRestClient implements RestClient {
 	
 	private static class SpringClientResponse implements RestClient.Response {
 		private final ResponseEntity<byte[]> responseEntity;
-		private final HttpHeaders headers;
+		private final org.springframework.http.HttpHeaders headers;
 
 		private SpringClientResponse(ResponseEntity<byte[]> responseEntity) {
 			this(responseEntity, responseEntity.getHeaders());
 		}
 
-		private SpringClientResponse(ResponseEntity<byte[]> responseEntity, HttpHeaders headers) {
+		private SpringClientResponse(ResponseEntity<byte[]> responseEntity, org.springframework.http.HttpHeaders headers) {
 			this.responseEntity = responseEntity;
 			this.headers = headers;
 		}
@@ -177,7 +176,7 @@ public class SpringRestClientRestClient implements RestClient {
 	public final class SpringRestClientMultipartPayload extends SpringClientRequest implements MultipartPayload {
 		private final MultiValueMap<String, HttpEntity<?>> multipartBody;
 		
-		private SpringRestClientMultipartPayload(Function<UriBuilder, UriBuilder> uriBuilder, Consumer<HttpHeaders> headerBuilder, MultiValueMap<String, HttpEntity<?>> multipartBody) {
+		private SpringRestClientMultipartPayload(Function<UriBuilder, UriBuilder> uriBuilder, Consumer<org.springframework.http.HttpHeaders> headerBuilder, MultiValueMap<String, HttpEntity<?>> multipartBody) {
 			super(uriBuilder, headerBuilder);
 			this.multipartBody = multipartBody;
 		}
@@ -203,9 +202,8 @@ public class SpringRestClientRestClient implements RestClient {
 	private final class RestClientMultipartPayloadBuilder extends SpringClientRequestBuilder implements MultipartPayload.Builder {
 		private final MultiValueMap<String, HttpEntity<?>> parts = new LinkedMultiValueMap<>();
 		
-		@SuppressWarnings("serial")
 		private void internalAdd(String fieldName, Object fieldData, MediaType contentType) {
-			parts.add(fieldName, new HttpEntity<>(fieldData, new HttpHeaders() {
+			parts.add(fieldName, new HttpEntity<>(fieldData, new org.springframework.http.HttpHeaders() {
 				{
 					setContentType(contentType);
 				}
@@ -250,7 +248,7 @@ public class SpringRestClientRestClient implements RestClient {
 
 	private class SpringClientGetRequest extends SpringClientRequest implements RestClient.GetRequest {
         
-		private SpringClientGetRequest(Function<UriBuilder, UriBuilder> uriBuilder,	Consumer<HttpHeaders> headerBuilder) {
+		private SpringClientGetRequest(Function<UriBuilder, UriBuilder> uriBuilder,	Consumer<org.springframework.http.HttpHeaders> headerBuilder) {
 			super(uriBuilder, headerBuilder);
 		}
 
@@ -269,7 +267,7 @@ public class SpringRestClientRestClient implements RestClient {
 
 	private class SpringClientGetRequestBuilder extends SpringClientRequestBuilder implements RestClient.GetRequest.Builder {
 //        private Function<UriBuilder, UriBuilder> uriBuilder = Function.identity();
-//        private Consumer<HttpHeaders> headerBuilder = correlationIdFn != null ? h->h.put(RestClient.CORRELATION_ID_HTTP_HDR, List.of(correlationIdFn.get())) 
+//        private Consumer<org.springframework.http.HttpHeaders> headerBuilder = correlationIdFn != null ? h->h.put(RestClient.CORRELATION_ID_HTTP_HDR, List.of(correlationIdFn.get())) 
 //        																	  : __->{};	// if correlationIdFn is available, use it as the base headerBuilder function.
         
         private SpringClientGetRequestBuilder() {
