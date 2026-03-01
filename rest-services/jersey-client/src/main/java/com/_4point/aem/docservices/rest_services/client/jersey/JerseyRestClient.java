@@ -6,7 +6,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
@@ -23,6 +25,7 @@ import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.Response.Status.Family;
 import jakarta.ws.rs.core.Response.StatusType;
@@ -100,9 +103,19 @@ public class JerseyRestClient implements RestClient {
 
 		@Override
 		public Optional<String> retrieveHeader(String header) {
-			return Optional.ofNullable(response.getHeaderString(header));
+			return Optional.ofNullable(response.getStringHeaders().getFirst(header));
+		}
+
+		@Override
+		public HttpHeaders headers() {
+			return new JerseyHttpHeaders(response.getStringHeaders());
 		}
 		
+		@Override
+		public Cookies getCookies() {
+			return new JerseyResponseCookies(response.getCookies());
+		}
+
 		private static Optional<Response> processResponse(jakarta.ws.rs.core.Response response, MediaType expectedMediaType) throws RestClientException {
 			try {
 				StatusType resultStatus = response.getStatusInfo();
@@ -131,6 +144,24 @@ public class JerseyRestClient implements RestClient {
 				return Optional.of(new JerseyResponse(response));
 			} catch (IOException e) {
 				throw new RestClientException("IO Error while reading AEM response.", e);
+			}
+		}
+		
+		private static class JerseyResponseCookies implements Cookies {
+			private final Map<String, NewCookie> cookies;
+			
+			private JerseyResponseCookies(Map<String, NewCookie> cookies) {
+				this.cookies = cookies;
+			}
+
+			@Override
+			public boolean isEmpty() {
+				return cookies.isEmpty();
+			}
+
+			@Override
+			public boolean isPresent() {
+				return !isEmpty();
 			}
 		}
 	}
@@ -329,6 +360,35 @@ public class JerseyRestClient implements RestClient {
 		public PayloadBuilder addHeader(String name, String value) {
 			requestHeaders.add(new NameValuePair(name, value));
 			return this;
+		}
+	}
+	
+	private static class JerseyHttpHeaders implements HttpHeaders {
+		private final jakarta.ws.rs.core.MultivaluedMap<String, String> headers;
+		
+		private JerseyHttpHeaders(jakarta.ws.rs.core.MultivaluedMap<String, String> headers) {
+			this.headers = headers;
+		}
+
+		@Override
+		public CaseHandling caseHandling() {
+			return CaseHandling.UPSHIFTS;
+		}
+
+		@Override
+		public List<HttpHeader> getHeaders(String headerName) {
+			return headers.entrySet()
+						  .stream()
+						  .filter(header -> header.getKey().equalsIgnoreCase(headerName))
+						  .mapMulti(JerseyHttpHeaders::mapHeaderValues)
+						  .toList();
+		}
+
+		private static void mapHeaderValues(Map.Entry<String, List<String>> headerEntry, Consumer<HttpHeader> valueConsumer) {
+			String headerName = headerEntry.getKey();
+			for(String headerValue : headerEntry.getValue()) {
+				valueConsumer.accept(new HttpHeader(headerName, headerValue));
+			}
 		}
 
 	}

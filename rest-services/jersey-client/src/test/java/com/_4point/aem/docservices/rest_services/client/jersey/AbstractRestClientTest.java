@@ -6,11 +6,13 @@ import static org.hamcrest.Matchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.io.ByteArrayInputStream;
 
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 import com._4point.aem.docservices.rest_services.client.RestClient;
 import com._4point.aem.docservices.rest_services.client.RestClient.ContentType;
 import com._4point.aem.docservices.rest_services.client.RestClient.GetRequest;
+import com._4point.aem.docservices.rest_services.client.RestClient.HttpHeaders;
+import com._4point.aem.docservices.rest_services.client.RestClient.Cookies;
+import com._4point.aem.docservices.rest_services.client.RestClient.HttpHeader;
 import com._4point.aem.docservices.rest_services.client.RestClient.MultipartPayload;
 import com._4point.aem.docservices.rest_services.client.RestClient.Response;
 import com._4point.aem.docservices.rest_services.client.RestClient.RestClientException;
@@ -135,6 +140,107 @@ abstract class AbstractRestClientTest {
 		assertEquals(ContentType.APPLICATION_PDF, response.contentType());
 		assertEquals(MOCK_PDF_BYTES, new String(response.data().readAllBytes()));
 		assertEquals(SAMPLE_HEADER_VALUE, response.retrieveHeader(SAMPLE_HEADER).orElseThrow());
+		verify(postRequestedFor(urlEqualTo(ENDPOINT))
+				.withAllRequestBodyParts(aMultipart(FIELD1_NAME).withBody(equalTo(FIELD1_DATA)))
+				.withHeader(RestClient.CORRELATION_ID_HTTP_HDR, equalTo(CORRELATION_ID_TEXT))
+				);
+	}
+
+	@DisplayName("PostToServer with 1 part and return 1 header with 3 values in the response")
+	@Test
+	void testPostToServer_DocumentResponseWithMultipleHeaders() throws Exception {
+		// Given
+		stubFor(post(ENDPOINT).willReturn(okForContentType(ContentType.APPLICATION_PDF.contentType(), MOCK_PDF_BYTES)
+											.withHeader(SAMPLE_HEADER.toUpperCase(), SAMPLE_HEADER_VALUE + "_3")
+											.withHeader(SAMPLE_HEADER, SAMPLE_HEADER_VALUE + "_2")
+											.withHeader(SAMPLE_HEADER, SAMPLE_HEADER_VALUE)
+										  ));
+	
+		// When
+		Response response = postToServerBuilder().performPostToServer(FIELD1_NAME, FIELD1_DATA).orElseThrow();
+
+		// Then
+		assertEquals(ContentType.APPLICATION_PDF, response.contentType());
+		assertEquals(MOCK_PDF_BYTES, new String(response.data().readAllBytes()));
+		assertThat(response.retrieveHeader(SAMPLE_HEADER).orElseThrow(), anyOf(Matchers.equalTo(SAMPLE_HEADER_VALUE), Matchers.equalTo(SAMPLE_HEADER_VALUE + "_3")));				// Should retrieve the first header value or 3rd, not the 2nd
+		assertThat(response.retrieveHeader(SAMPLE_HEADER.toUpperCase()).orElseThrow(), anyOf(Matchers.equalTo(SAMPLE_HEADER_VALUE), Matchers.equalTo(SAMPLE_HEADER_VALUE + "_3")));  // Uppercase version should also retrieve the first header value or 3rd, not the 2nd
+		
+		HttpHeaders headers = response.headers();
+		List<HttpHeader> headersList = headers.getHeaders(SAMPLE_HEADER);
+		switch (headers.caseHandling()) {
+			case DOWNSHIFTS -> assertThat(headersList, containsInAnyOrder(equalTo(new HttpHeader(SAMPLE_HEADER.toLowerCase(), SAMPLE_HEADER_VALUE)), 
+																		 equalTo(new HttpHeader(SAMPLE_HEADER.toLowerCase(), SAMPLE_HEADER_VALUE + "_2")), 
+																		 equalTo(new HttpHeader(SAMPLE_HEADER.toLowerCase(), SAMPLE_HEADER_VALUE + "_3")) 
+				    													 )
+				  );
+			case UPSHIFTS -> assertThat(headersList, containsInAnyOrder(equalTo(new HttpHeader(SAMPLE_HEADER.toUpperCase(), SAMPLE_HEADER_VALUE)), 
+																		 equalTo(new HttpHeader(SAMPLE_HEADER.toUpperCase(), SAMPLE_HEADER_VALUE + "_2")), 
+																		 equalTo(new HttpHeader(SAMPLE_HEADER.toUpperCase(), SAMPLE_HEADER_VALUE + "_3")) 
+				    													 )
+				  );
+			case PRESERVES_CASE -> assertThat(headersList, containsInAnyOrder(equalTo(new HttpHeader(SAMPLE_HEADER, SAMPLE_HEADER_VALUE)), 
+																		 equalTo(new HttpHeader(SAMPLE_HEADER, SAMPLE_HEADER_VALUE + "_2")), 
+																		 equalTo(new HttpHeader(SAMPLE_HEADER.toUpperCase(), SAMPLE_HEADER_VALUE + "_3")) 
+				    													 )
+				  );
+		}
+		
+		verify(postRequestedFor(urlEqualTo(ENDPOINT))
+				.withAllRequestBodyParts(aMultipart(FIELD1_NAME).withBody(equalTo(FIELD1_DATA)))
+				.withHeader(RestClient.CORRELATION_ID_HTTP_HDR, equalTo(CORRELATION_ID_TEXT))
+				);
+	}
+
+	@DisplayName("PostToServer with 1 part and return no cookies in the response")
+	@Test
+	void testPostToServer_DocumentResponseWithNoCookies() throws Exception {
+		// Given
+		final String COOKIES_KEY = "Set-Cookie";
+		stubFor(post(ENDPOINT).willReturn(okForContentType(ContentType.APPLICATION_PDF.contentType(), MOCK_PDF_BYTES)
+										  ));
+	
+		// When
+		Response response = postToServerBuilder().performPostToServer(FIELD1_NAME, FIELD1_DATA).orElseThrow();
+
+		// Then
+		assertEquals(ContentType.APPLICATION_PDF, response.contentType());
+		assertEquals(MOCK_PDF_BYTES, new String(response.data().readAllBytes()));
+		assertTrue(response.retrieveHeader(COOKIES_KEY).isEmpty());					// Should not be present
+		assertTrue(response.retrieveHeader(COOKIES_KEY.toUpperCase()).isEmpty());  // Should not be present
+		
+		Cookies cookies = response.getCookies();
+		assertFalse(cookies.isPresent());
+		assertTrue(cookies.isEmpty());
+		
+		verify(postRequestedFor(urlEqualTo(ENDPOINT))
+				.withAllRequestBodyParts(aMultipart(FIELD1_NAME).withBody(equalTo(FIELD1_DATA)))
+				.withHeader(RestClient.CORRELATION_ID_HTTP_HDR, equalTo(CORRELATION_ID_TEXT))
+				);
+	}
+
+	@DisplayName("PostToServer with 1 part and return 1 set-cookie in the response")
+	@Test
+	void testPostToServer_DocumentResponseWithCookie() throws Exception {
+		// Given
+		final String COOKIES_KEY = "Set-Cookie";
+		final String COOKIES_VALUE = "cookie1=value1; cookie2=value2; HttpOnly";
+		stubFor(post(ENDPOINT).willReturn(okForContentType(ContentType.APPLICATION_PDF.contentType(), MOCK_PDF_BYTES)
+											.withHeader(COOKIES_KEY, COOKIES_VALUE)
+										  ));
+	
+		// When
+		Response response = postToServerBuilder().performPostToServer(FIELD1_NAME, FIELD1_DATA).orElseThrow();
+
+		// Then
+		assertEquals(ContentType.APPLICATION_PDF, response.contentType());
+		assertEquals(MOCK_PDF_BYTES, new String(response.data().readAllBytes()));
+		assertEquals(COOKIES_VALUE, response.retrieveHeader(COOKIES_KEY).orElseThrow());				// Should retrieve the first header value, not the 2nd or 3rd one
+		assertEquals(COOKIES_VALUE, response.retrieveHeader(COOKIES_KEY.toUpperCase()).orElseThrow());  // Should retrieve the first header value, not the 3rd one
+		
+		Cookies cookies = response.getCookies();
+		assertTrue(cookies.isPresent());
+		assertFalse(cookies.isEmpty());
+		
 		verify(postRequestedFor(urlEqualTo(ENDPOINT))
 				.withAllRequestBodyParts(aMultipart(FIELD1_NAME).withBody(equalTo(FIELD1_DATA)))
 				.withHeader(RestClient.CORRELATION_ID_HTTP_HDR, equalTo(CORRELATION_ID_TEXT))

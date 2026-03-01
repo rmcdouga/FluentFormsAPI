@@ -5,11 +5,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpEntity;
@@ -163,6 +165,34 @@ public class SpringRestClientRestClient implements RestClient {
 			return toContentType(headers.getContentType());
 		}
 
+		@Override
+		public HttpHeaders headers() {
+			return new SpringRestClientHttpHeaders(headers);
+		}
+
+		@Override
+		public Cookies getCookies() {
+			return new SpringRestClientResponseCookies(headers.getFirst(org.springframework.http.HttpHeaders.SET_COOKIE));
+		}
+
+		private static class SpringRestClientResponseCookies implements Cookies {
+			private final @Nullable String cookieHeaderValue;
+
+			private SpringRestClientResponseCookies(@Nullable String cookieHeaderValue) {
+				this.cookieHeaderValue = cookieHeaderValue;
+			}
+
+			@Override
+			public boolean isEmpty() {
+				return cookieHeaderValue == null || cookieHeaderValue.isEmpty();
+			}
+
+			@Override
+			public boolean isPresent() {
+				return !isEmpty();
+			}
+			
+		}
 	}
 	
 	private static ContentType toContentType(MediaType mediaType) {
@@ -294,4 +324,34 @@ public class SpringRestClientRestClient implements RestClient {
             return this;
         }
     }
+	
+	private static class SpringRestClientHttpHeaders implements RestClient.HttpHeaders {
+		private final org.springframework.http.HttpHeaders headers;
+
+		private SpringRestClientHttpHeaders(org.springframework.http.HttpHeaders headers) {
+			this.headers = headers;
+		}
+
+		@Override
+		public CaseHandling caseHandling() {
+			return CaseHandling.UPSHIFTS;
+		}
+
+		@Override
+		public List<HttpHeader> getHeaders(String headerName) {
+			return headers.headerSet().stream()
+									  .filter(e->e.getKey().equalsIgnoreCase(headerName))
+									  .mapMulti(SpringRestClientHttpHeaders::mapHeaderValues)
+									  .toList();
+		}
+		
+		private static void mapHeaderValues(Map.Entry<String, List<String>> headerEntry, Consumer<HttpHeader> valueConsumer) {
+			String headerName = headerEntry.getKey();
+			for(String headerValue : headerEntry.getValue()) {
+				valueConsumer.accept(new HttpHeader(headerName, headerValue));
+			}
+		}
+
+	}
+	
 }
