@@ -1,6 +1,7 @@
 package com._4point.aem.fluentforms.api;
 
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -325,7 +326,9 @@ public final class PathOrUrl {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(isCrxUrl, path, url);
+		// URL.hashCode() is notoriously broken, so we need to url strings instead.
+		var urlString = (url != null) ? url.toExternalForm() : null;
+		return Objects.hash(isCrxUrl, path, urlString);
 	}
 
 	@Override
@@ -337,7 +340,15 @@ public final class PathOrUrl {
 		if (getClass() != obj.getClass())
 			return false;
 		PathOrUrl other = (PathOrUrl) obj;
-		return isCrxUrl == other.isCrxUrl && Objects.equals(path, other.path) && Objects.equals(url, other.url);
+		
+		try {
+			// URL.equals() is notoriously broken, so we need to compare URIs instead.
+			var thisUri = (url != null) ? url.toURI() : null;
+			var otherUri = (other.url != null) ? other.url.toURI() : null;
+			return isCrxUrl == other.isCrxUrl && Objects.equals(path, other.path) && Objects.equals(thisUri, otherUri);
+		} catch (URISyntaxException e) {
+			throw new IllegalArgumentException("Bad URL provided. this.url='" + url + "', other.url='" + other.url + "'.", e);
+		}
 	}
 
 }
