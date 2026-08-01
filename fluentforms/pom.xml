@@ -57,12 +57,12 @@
         <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>
-        <maven-failsafe-plugin.version>3.5.4</maven-failsafe-plugin.version>
+        <maven-failsafe-plugin.version>3.5.6</maven-failsafe-plugin.version>
         <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
         <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
-        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+        <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
         <!-- Packaging Maven plugin versions -->
-        <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
+        <maven-jar-plugin.version>3.5.1</maven-jar-plugin.version>
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
         <!-- Tools Maven plugin versions -->
         <maven-dependency-plugin.version>3.11.0</maven-dependency-plugin.version>
@@ -70,12 +70,12 @@
         <maven-release-plugin.version>3.3.1</maven-release-plugin.version>
 
         <!-- Other Maven plugin versions -->
-        <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
         <maven-sling-plugin.version>3.0.4</maven-sling-plugin.version>
         <htl-maven-plugin.version>2.0.4-1.4.0</htl-maven-plugin.version>
         <filevault-package-maven-plugin.version>1.4.0</filevault-package-maven-plugin.version>
         <content-package-maven-plugin.version>1.0.6</content-package-maven-plugin.version>
-        <maven-bundle-plugin.version>6.0.0</maven-bundle-plugin.version>
+        <maven-bundle-plugin.version>6.1.0</maven-bundle-plugin.version>
         <build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
         
         <!-- Mutation Testing plugin versions -->
@@ -84,13 +84,13 @@
 
 		<!-- Testing dependencies -->
         <mockito.version>5.23.0</mockito.version>
-        <junit.version>6.1.0</junit.version>
-        <wcm.mocks.version>5.6.14</wcm.mocks.version>
+        <junit.version>6.1.2</junit.version>
+        <wcm.mocks.version>5.7.4</wcm.mocks.version>
         <slf4j-test.version>1.2.0</slf4j-test.version>
-        <slf4j.version>2.0.17</slf4j.version>
+        <slf4j.version>2.0.18</slf4j.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <equalsverifier.version>4.2.5</equalsverifier.version>
-        <xmlunit.version>2.10.4</xmlunit.version>
+        <equalsverifier.version>4.5</equalsverifier.version>
+        <xmlunit.version>2.13.0</xmlunit.version>
         
         <!-- Project dependecies -->
         <aemfd.client.sdk.version>6.1.152</aemfd.client.sdk.version> <!-- fluentforms requires AEM 6.5 LTS SP1 or later -->
