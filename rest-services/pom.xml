@@ -66,7 +66,7 @@
 
         <!-- Other Maven plugin versions -->
         <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
-        <maven-sling-plugin.version>3.0.4</maven-sling-plugin.version>
+        <maven-sling-plugin.version>2.4.2</maven-sling-plugin.version>
         <htl-maven-plugin.version>2.0.4-1.4.0</htl-maven-plugin.version>
         <filevault-package-maven-plugin.version>1.4.0</filevault-package-maven-plugin.version>
         <content-package-maven-plugin.version>1.0.6</content-package-maven-plugin.version>
