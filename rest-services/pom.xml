@@ -88,7 +88,7 @@
         <junit.version>6.1.2</junit.version>
         <wcm.mocks.version>5.6.14</wcm.mocks.version> <!-- Versions later than this produce a org.reflections.ReflectionsException: Scanner TypeAnnotationsScanner was not configured error -->
         <slf4j-test.version>1.2.0</slf4j-test.version>
-        <slf4j.version>2.0.17</slf4j.version>
+        <slf4j.version>2.0.18</slf4j.version>
         <hamcrest.version>3.0</hamcrest.version>
         <pdfbox.version>3.0.8</pdfbox.version>
         <jsoup.version>1.23.1</jsoup.version>
