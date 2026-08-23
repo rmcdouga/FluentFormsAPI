@@ -94,7 +94,7 @@
         
         <!-- Project dependecies -->
         <aemfd.client.sdk.version>6.1.152</aemfd.client.sdk.version> <!-- fluentforms requires AEM 6.5 LTS SP1 or later -->
-        <io.wcm.maven.aem-dependencies.version>6.6.1.0000</io.wcm.maven.aem-dependencies.version>
+        <io.wcm.maven.aem-dependencies.version>6.6.3.0000</io.wcm.maven.aem-dependencies.version>
 
     </properties>
 
