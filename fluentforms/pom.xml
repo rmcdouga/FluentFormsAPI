@@ -79,7 +79,7 @@
         <build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
         
         <!-- Mutation Testing plugin versions -->
-		<pitest.maven.plugin.version>1.22.0</pitest.maven.plugin.version>
+		<pitest.maven.plugin.version>1.30.0</pitest.maven.plugin.version>
 		<pitest.junit5.maven.plugin.version>1.2.3</pitest.junit5.maven.plugin.version>
 
 		<!-- Testing dependencies -->
